@@ -4,6 +4,7 @@
     <title>Teacher Panel - Classroom Poll Manager</title>
     <style>
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; padding: 20px; background: #F0F4FF; color: #444; display: flex; flex-direction: column; align-items: center; }
+        .top-bar { width: 100%; max-width: 1250px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .container { display: flex; gap: 20px; width: 100%; max-width: 1250px; align-items: flex-start; }
         .section { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-height: 600px; }
         
@@ -12,11 +13,11 @@
         .active-tag { background: #77DD77; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; }
 
         .results { flex: 2; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
-        .chart { display: flex; align-items: flex-end; justify-content: space-around; height: 320px; margin: 40px 0 20px 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .chart { display: flex; align-items: flex-end; justify-content: space-around; height: 350px; margin: 40px 0 20px 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .bar-group { display: flex; flex-direction: column; align-items: center; width: 20%; }
         .bar { width: 100%; background: #AEC6CF; border-radius: 8px 8px 0 0; transition: 0.5s all; min-height: 5px; }
-        .count-label { font-weight: bold; margin-bottom: 8px; color: #779ECB; font-size: 18px; }
-        .group-name { margin-top: 12px; font-weight: bold; color: #666; }
+        .count-label { font-weight: bold; margin-bottom: 8px; color: #779ECB; font-size: 22px; }
+        .group-name { margin-top: 12px; font-weight: bold; color: #666; font-size: 18px; }
         .winning-bar { background: #77DD77 !important; transform: scale(1.05); box-shadow: 0 0 20px rgba(119,221,119,0.4); }
 
         .roster { width: 320px; }
@@ -26,16 +27,23 @@
         
         button { cursor: pointer; border-radius: 8px; border: none; font-weight: bold; transition: 0.2s; }
         .btn-blue { background: #779ECB; color: white; padding: 12px; width: 100%; }
+        .btn-fs { background: #555; color: white; padding: 10px 20px; width: auto; font-size: 14px; }
         .btn-green { background: #77DD77; color: white; padding: 8px 12px; font-size: 11px; }
         .btn-yellow { background: #FDFD96; color: #444; padding: 8px 12px; font-size: 11px; }
         .btn-red-text { background: none; color: #FF6961; font-size: 11px; padding: 5px; }
-        .btn-red-text:hover { text-decoration: underline; }
         
         textarea, input { width: 92%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #ddd; font-family: inherit; }
+
+        /* Fullscreen tweak */
+        :fullscreen body { background: white; padding: 40px; }
+        :-webkit-full-screen body { background: white; padding: 40px; }
     </style>
 </head>
-<body>
-    <h1 style="color: #779ECB; margin-bottom: 30px;">Classroom Poll Manager</h1>
+<body id="mainBody">
+    <div class="top-bar">
+        <h1 style="color: #779ECB; margin: 0;">Classroom Poll Manager</h1>
+        <button class="btn-fs" onclick="toggleFullScreen()">🖥️ Go Full Screen</button>
+    </div>
     
     <div class="container">
         <div class="section manager">
@@ -72,7 +80,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIG HERE
+        // REPLACE WITH YOUR CONFIG
          const firebaseConfig = {
   apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
   authDomain: "classvote-9fde8.firebaseapp.com",
@@ -90,6 +98,17 @@
         let allowed = [];
         let votes = {};
 
+        // Full Screen Toggle
+        window.toggleFullScreen = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        };
+
         onValue(ref(db, '/'), (snap) => {
             const data = snap.val() || {};
             library = data.classLibrary || {};
@@ -100,7 +119,6 @@
         });
 
         function updateUI() {
-            // Library List
             const libDiv = document.getElementById('libraryItems');
             libDiv.innerHTML = "";
             Object.keys(library).forEach(name => {
@@ -116,17 +134,15 @@
                     </div>`;
             });
 
-            // Chart
             let counts = {1:0, 2:0, 3:0, 4:0};
             Object.values(votes).forEach(v => v.choices.forEach(c => counts[c]++));
             for(let i=1; i<=4; i++){
                 const b = document.getElementById('bar'+i);
                 const v = document.getElementById('v'+i);
-                b.style.height = (counts[i] * 30) + "px"; 
+                b.style.height = (counts[i] * 35) + "px"; 
                 v.innerText = counts[i];
             }
 
-            // Roster
             document.getElementById('activeTitle').innerText = activeClass ? "Active: " + activeClass : "Select a Class";
             const rosDiv = document.getElementById('rosterItems');
             rosDiv.innerHTML = "";
@@ -146,7 +162,7 @@
         window.saveClass = () => {
             const name = document.getElementById('className').value.trim();
             const listStr = document.getElementById('classList').value;
-            if(!name || !listStr) return alert("Please enter a name and student list!");
+            if(!name || !listStr) return alert("Please enter class name and names!");
             const list = listStr.split(',').map(n => n.trim()).filter(n => n !== "");
             set(ref(db, 'classLibrary/' + name), list);
             if(name === activeClass) set(ref(db, 'allowedStudents'), list);
@@ -163,7 +179,7 @@
         };
 
         window.uploadClass = (name) => {
-            if(!confirm(`Upload ${name}? This will clear all current votes.`)) return;
+            if(!confirm(`Start voting for ${name}? Previous votes will be cleared.`)) return;
             set(ref(db, 'allowedStudents'), library[name]);
             set(ref(db, 'activeClassName'), name);
             remove(ref(db, 'votes'));
@@ -173,7 +189,7 @@
         window.deleteFromLibrary = (name) => {
             if(!confirm(`Permanently delete Class "${name}"?`)) return;
             if(name === activeClass) {
-                if(confirm(`This class is currently ACTIVE. Delete all votes and the roster too?`)) {
+                if(confirm(`WARNING: This class is ACTIVE. Delete all current votes too?`)) {
                     remove(ref(db, 'votes'));
                     remove(ref(db, 'voted'));
                     remove(ref(db, 'allowedStudents'));
@@ -190,14 +206,17 @@
         };
 
         window.resetCurrentVotes = () => {
-            if(confirm("Wipe all votes for the current class?")) { remove(ref(db, 'votes')); remove(ref(db, 'voted')); }
+            if(confirm("Wipe all votes for the current class?")) { 
+                remove(ref(db, 'votes')); 
+                remove(ref(db, 'voted')); 
+            }
         };
 
         window.revealWinner = () => {
             let counts = {1:0, 2:0, 3:0, 4:0};
             Object.values(votes).forEach(v => v.choices.forEach(c => counts[c]++));
             let max = Math.max(...Object.values(counts));
-            if(max === 0) return alert("No votes recorded.");
+            if(max === 0) return alert("No votes yet!");
             for(let i=1; i<=4; i++){
                 const b = document.getElementById('bar'+i);
                 if(counts[i] === max && max > 0) { b.classList.add('winning-bar'); }

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Teacher Control Panel</title>
+    <style>
+        .visualizer { display: flex; justify-content: space-around; align-items: flex-end; height: 300px; margin-top: 50px; }
+        .bar { width: 60px; background: #2196F3; transition: all 0.5s ease; border-radius: 5px 5px 0 0; text-align: center; color: white; }
+        .winner-glow { box-shadow: 0 0 20px 10px gold; transform: scale(1.2); }
+        section { border-bottom: 1px solid #ccc; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Teacher Dashboard</h1>
+
+    <section id="roster">
+        <h3>Manage Students</h3>
+        <input type="text" id="new-student" placeholder="Student Name">
+        <button onclick="addStudent()">Add Student</button>
+        <div id="student-list"></div>
+    </section>
+
+    <section id="real-time">
+        <h3>Live Vote Visualizer</h3>
+        <div class="visualizer">
+            <div id="bar1" class="bar" style="height: 20px;">G1</div>
+            <div id="bar2" class="bar" style="height: 20px;">G2</div>
+            <div id="bar3" class="bar" style="height: 20px;">G3</div>
+            <div id="bar4" class="bar" style="height: 20px;">G4</div>
+        </div>
+        <button onclick="calculateWinner()" style="margin-top: 30px; padding: 15px;">DONE: Reveal Winner</button>
+    </section>
+
+    <script>
+        let voteCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+
+        function addStudent() {
+            let name = document.getElementById('new-student').value;
+            let list = JSON.parse(localStorage.getItem('allowedStudents')) || [];
+            list.push(name);
+            localStorage.setItem('allowedStudents', JSON.stringify(list));
+            updateRosterUI();
+        }
+
+        function updateRosterUI() {
+            let list = JSON.parse(localStorage.getItem('allowedStudents')) || [];
+            document.getElementById('student-list').innerText = "Allowed: " + list.join(", ");
+        }
+
+        // Simulating Real-time update (polling)
+        setInterval(() => {
+            let pending = JSON.parse(localStorage.getItem('pendingVotes')) || [];
+            if(pending.length > 0) {
+                pending.forEach(v => {
+                    v.votes.forEach(group => {
+                        voteCounts[group]++;
+                        updateVisuals(group);
+                    });
+                });
+                localStorage.setItem('pendingVotes', JSON.stringify([])); // Clear queue
+            }
+        }, 1000);
+
+        function updateVisuals(group) {
+            const bar = document.getElementById(`bar${group}`);
+            const baseHeight = 20;
+            const multiplier = 30; // pixels per vote
+            bar.style.height = (baseHeight + (voteCounts[group] * multiplier)) + "px";
+            bar.innerText = `G${group} (${voteCounts[group]})`;
+        }
+
+        function calculateWinner() {
+            let winner = Object.keys(voteCounts).reduce((a, b) => voteCounts[a] > voteCounts[b] ? a : b);
+            alert(`The winner is Group ${winner}!`);
+            document.getElementById(`bar${winner}`).classList.add('winner-glow');
+        }
+
+        updateRosterUI();
+    </script>
+</body>
+</html>

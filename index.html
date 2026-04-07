@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Vote</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f7f6; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        .group-btn { margin: 10px; padding: 15px; width: 80%; border: 2px solid #ddd; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+        .selected { background: #4CAF50; color: white; border-color: #2E7D32; }
+        #submit-btn { margin-top: 20px; padding: 10px 30px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Enter Your Name</h2>
+        <input type="text" id="student-name" placeholder="Full Name" style="padding: 10px; width: 80%;">
+        <button onclick="checkName()" style="padding: 10px; margin-top: 10px;">Enter</button>
+
+        <div id="voting-section" style="display:none;">
+            <h3>Select Exactly 2 Groups</h3>
+            <div id="groups">
+                <button class="group-btn" onclick="toggleGroup(1)">Group 1</button>
+                <button class="group-btn" onclick="toggleGroup(2)">Group 2</button>
+                <button class="group-btn" onclick="toggleGroup(3)">Group 3</button>
+                <button class="group-btn" onclick="toggleGroup(4)">Group 4</button>
+            </div>
+            <button id="submit-btn" onclick="submitVote()">Submit Votes</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedGroups = [];
+        let currentStudent = "";
+
+        function checkName() {
+            const name = document.getElementById('student-name').value.trim();
+            // In a real app, you'd fetch this from the Teacher's database/Firebase
+            const allowedStudents = JSON.parse(localStorage.getItem('allowedStudents')) || [];
+            const alreadyVoted = JSON.parse(localStorage.getItem('votedStudents')) || [];
+
+            if (!allowedStudents.includes(name)) {
+                alert("Name not recognized. Please ask the teacher.");
+            } else if (alreadyVoted.includes(name)) {
+                alert("You have already voted!");
+            } else {
+                currentStudent = name;
+                document.getElementById('voting-section').style.display = 'block';
+            }
+        }
+
+        function toggleGroup(groupNum) {
+            const btns = document.getElementsByClassName('group-btn');
+            if (selectedGroups.includes(groupNum)) {
+                selectedGroups = selectedGroups.filter(g => g !== groupNum);
+                btns[groupNum-1].classList.remove('selected');
+            } else {
+                if (selectedGroups.length < 2) {
+                    selectedGroups.push(groupNum);
+                    btns[groupNum-1].classList.add('selected');
+                } else {
+                    alert("You can only select exactly 2 groups.");
+                }
+            }
+            document.getElementById('submit-btn').style.display = selectedGroups.length === 2 ? 'block' : 'none';
+        }
+
+        function submitVote() {
+            // Send votes to "server" (LocalStorage for demo)
+            let allVotes = JSON.parse(localStorage.getItem('pendingVotes')) || [];
+            allVotes.push({ name: currentStudent, votes: selectedGroups });
+            localStorage.setItem('pendingVotes', JSON.stringify(allVotes));
+
+            // Mark student as voted
+            let voted = JSON.parse(localStorage.getItem('votedStudents')) || [];
+            voted.push(currentStudent);
+            localStorage.setItem('votedStudents', JSON.stringify(voted));
+
+            alert("Votes submitted! Waiting for teacher approval.");
+            location.reload();
+        }
+    </script>
+</body>
+</html>

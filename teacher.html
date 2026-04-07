@@ -1,39 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Teacher Panel - Class Manager</title>
+    <title>Teacher Panel - Classroom Poll Manager</title>
     <style>
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; padding: 20px; background: #F0F4FF; color: #444; display: flex; flex-direction: column; align-items: center; }
         .container { display: flex; gap: 20px; width: 100%; max-width: 1250px; align-items: flex-start; }
-        .section { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-height: 600px; }
+        .section { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-height: 600px; }
         
-        /* Left: Class Manager */
         .manager { width: 320px; }
-        .class-card { background: #f9f9f9; padding: 12px; margin-top: 10px; border-radius: 12px; border: 1px solid #e0e0e0; }
-        .active-tag { background: #77DD77; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; vertical-align: middle; }
+        .class-card { background: #f9f9f9; padding: 15px; margin-top: 12px; border-radius: 12px; border: 1px solid #e0e0e0; }
+        .active-tag { background: #77DD77; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; }
 
-        /* Middle: Live Results */
         .results { flex: 2; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
-        .chart { display: flex; align-items: flex-end; justify-content: space-around; height: 320px; margin: 40px 0 20px 0; border-bottom: 2px solid #eee; padding: 0 10px; }
-        .bar-container { display: flex; flex-direction: column; align-items: center; width: 20%; }
-        .bar { width: 100%; background: #AEC6CF; border-radius: 8px 8px 0 0; transition: 0.5s all; position: relative; min-height: 10px; }
-        .bar-label { font-weight: bold; margin-bottom: 10px; font-size: 14px; color: #666; }
+        .chart { display: flex; align-items: flex-end; justify-content: space-around; height: 320px; margin: 40px 0 20px 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .bar-group { display: flex; flex-direction: column; align-items: center; width: 20%; }
+        .bar { width: 100%; background: #AEC6CF; border-radius: 8px 8px 0 0; transition: 0.5s all; min-height: 5px; }
+        .count-label { font-weight: bold; margin-bottom: 8px; color: #779ECB; font-size: 18px; }
+        .group-name { margin-top: 12px; font-weight: bold; color: #666; }
         .winning-bar { background: #77DD77 !important; transform: scale(1.05); box-shadow: 0 0 20px rgba(119,221,119,0.4); }
-        .fade-out { opacity: 0.3; }
 
-        /* Right: Active Roster */
         .roster { width: 320px; }
-        .student-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        .student-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0; }
         .voted { color: #77DD77; font-weight: bold; }
         .waiting { color: #B0B0B0; font-style: italic; }
         
         button { cursor: pointer; border-radius: 8px; border: none; font-weight: bold; transition: 0.2s; }
         .btn-blue { background: #779ECB; color: white; padding: 12px; width: 100%; }
-        .btn-green { background: #77DD77; color: white; padding: 6px 10px; font-size: 11px; }
-        .btn-edit { background: #FDFD96; color: #666; padding: 6px 10px; font-size: 11px; }
-        .btn-red { background: none; color: #FF6961; font-size: 11px; cursor: pointer; border: 1px solid transparent; }
-        .btn-red:hover { border-color: #FF6961; border-radius: 4px; }
-        textarea, input { width: 92%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: inherit; }
+        .btn-green { background: #77DD77; color: white; padding: 8px 12px; font-size: 11px; }
+        .btn-yellow { background: #FDFD96; color: #444; padding: 8px 12px; font-size: 11px; }
+        .btn-red-text { background: none; color: #FF6961; font-size: 11px; padding: 5px; }
+        .btn-red-text:hover { text-decoration: underline; }
+        
+        textarea, input { width: 92%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #ddd; font-family: inherit; }
     </style>
 </head>
 <body>
@@ -43,29 +41,29 @@
         <div class="section manager">
             <h3>Class Library</h3>
             <input type="text" id="className" placeholder="Class Name (e.g. 802)">
-            <textarea id="classList" rows="5" placeholder="Names: 10 張嘉業, 11 翁翊凱... (separate by comma)"></textarea>
+            <textarea id="classList" rows="5" placeholder="Names separated by comma..."></textarea>
             <button class="btn-blue" id="saveBtn" onclick="saveClass()">Save to Library</button>
             <div id="libraryItems"></div>
         </div>
 
         <div class="section results">
             <div>
-                <h2 id="activeTitle" style="margin: 0; color: #779ECB;">No Active Class</h2>
+                <h2 id="activeTitle" style="margin: 0; color: #779ECB;">No Active Session</h2>
                 <div class="chart">
-                    <div class="bar-container"><div id="v1" class="bar-label">0</div><div id="bar1" class="bar"></div><div class="bar-label" style="margin-top:10px">G1</div></div>
-                    <div class="bar-container"><div id="v2" class="bar-label">0</div><div id="bar2" class="bar"></div><div class="bar-label" style="margin-top:10px">G2</div></div>
-                    <div class="bar-container"><div id="v3" class="bar-label">0</div><div id="bar3" class="bar"></div><div class="bar-label" style="margin-top:10px">G3</div></div>
-                    <div class="bar-container"><div id="v4" class="bar-label">0</div><div id="bar4" class="bar"></div><div class="bar-label" style="margin-top:10px">G4</div></div>
+                    <div class="bar-group"><div id="v1" class="count-label">0</div><div id="bar1" class="bar"></div><div class="group-name">G1</div></div>
+                    <div class="bar-group"><div id="v2" class="count-label">0</div><div id="bar2" class="bar"></div><div class="group-name">G2</div></div>
+                    <div class="bar-group"><div id="v3" class="count-label">0</div><div id="bar3" class="bar"></div><div class="group-name">G3</div></div>
+                    <div class="bar-group"><div id="v4" class="count-label">0</div><div id="bar4" class="bar"></div><div class="group-name">G4</div></div>
                 </div>
             </div>
             <div>
-                <button id="main-btn" class="btn-blue" style="background:#77DD77; padding:15px; font-size: 18px;" onclick="revealWinner()">🏆 Show Winner</button>
-                <button class="btn-red" style="margin-top:20px" onclick="resetCurrentVotes()">Clear Current Votes Only</button>
+                <button class="btn-blue" style="background:#77DD77; padding:18px; font-size: 20px;" onclick="revealWinner()">🏆 Show Winner</button>
+                <button class="btn-red-text" style="margin-top:20px; font-size: 13px;" onclick="resetCurrentVotes()">Clear Current Votes Only</button>
             </div>
         </div>
 
         <div class="section roster">
-            <h3>Student Roster (<span id="vCount">0</span> Voted)</h3>
+            <h3>Active Roster (<span id="vCount">0</span> Voted)</h3>
             <div id="rosterItems" style="max-height: 600px; overflow-y: auto;"></div>
         </div>
     </div>
@@ -74,8 +72,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // PASTE YOUR CONFIG HERE
-        const firebaseConfig = {
+        // CONFIG HERE
+         const firebaseConfig = {
   apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
   authDomain: "classvote-9fde8.firebaseapp.com",
   projectId: "classvote-9fde8",
@@ -102,30 +100,33 @@
         });
 
         function updateUI() {
+            // Library List
             const libDiv = document.getElementById('libraryItems');
             libDiv.innerHTML = "";
             Object.keys(library).forEach(name => {
                 const isActive = (name === activeClass);
                 libDiv.innerHTML += `
                     <div class="class-card">
-                        <b>${name}</b> ${isActive ? '<span class="active-tag">ACTIVE</span>' : ''}<br>
-                        <div style="margin-top:8px; display:flex; gap:5px;">
+                        <b>${name}</b> ${isActive ? '<span class="active-tag">ACTIVE</span>' : ''}
+                        <div style="margin-top:10px; display:flex; gap:8px;">
                             <button class="btn-green" onclick="uploadClass('${name}')">Upload</button>
-                            <button class="btn-edit" onclick="editLibraryClass('${name}')">Edit</button>
-                            <button class="btn-red" style="margin-left:auto" onclick="deleteFromLibrary('${name}')">Delete</button>
+                            <button class="btn-yellow" onclick="editLibraryClass('${name}')">Edit</button>
+                            <button class="btn-red-text" style="margin-left:auto" onclick="deleteFromLibrary('${name}')">Delete</button>
                         </div>
                     </div>`;
             });
 
+            // Chart
             let counts = {1:0, 2:0, 3:0, 4:0};
             Object.values(votes).forEach(v => v.choices.forEach(c => counts[c]++));
             for(let i=1; i<=4; i++){
                 const b = document.getElementById('bar'+i);
                 const v = document.getElementById('v'+i);
-                b.style.height = (counts[i] * 25) + "px";
+                b.style.height = (counts[i] * 30) + "px"; 
                 v.innerText = counts[i];
             }
 
+            // Roster
             document.getElementById('activeTitle').innerText = activeClass ? "Active: " + activeClass : "Select a Class";
             const rosDiv = document.getElementById('rosterItems');
             rosDiv.innerHTML = "";
@@ -136,7 +137,7 @@
                 rosDiv.innerHTML += `
                     <div class="student-item">
                         <span class="${hasVoted?'voted':'waiting'}">${n} ${hasVoted?'Voted ✓':'Waiting...'}</span>
-                        <button class="btn-red" onclick="removeSingleStudent('${n}')">Delete Student</button>
+                        <button class="btn-red-text" onclick="removeSingleStudent('${n}')">Delete</button>
                     </div>`;
             });
             document.getElementById('vCount').innerText = vTotal;
@@ -145,12 +146,10 @@
         window.saveClass = () => {
             const name = document.getElementById('className').value.trim();
             const listStr = document.getElementById('classList').value;
-            if(!name || !listStr) return alert("Fill all fields!");
+            if(!name || !listStr) return alert("Please enter a name and student list!");
             const list = listStr.split(',').map(n => n.trim()).filter(n => n !== "");
-            
             set(ref(db, 'classLibrary/' + name), list);
             if(name === activeClass) set(ref(db, 'allowedStudents'), list);
-
             document.getElementById('className').value = "";
             document.getElementById('classList').value = "";
             document.getElementById('saveBtn').innerText = "Save to Library";
@@ -164,37 +163,45 @@
         };
 
         window.uploadClass = (name) => {
-            if(!confirm(`Upload ${name}? This clears current votes!`)) return;
+            if(!confirm(`Upload ${name}? This will clear all current votes.`)) return;
             set(ref(db, 'allowedStudents'), library[name]);
             set(ref(db, 'activeClassName'), name);
             remove(ref(db, 'votes'));
             remove(ref(db, 'voted'));
         };
 
+        window.deleteFromLibrary = (name) => {
+            if(!confirm(`Permanently delete Class "${name}"?`)) return;
+            if(name === activeClass) {
+                if(confirm(`This class is currently ACTIVE. Delete all votes and the roster too?`)) {
+                    remove(ref(db, 'votes'));
+                    remove(ref(db, 'voted'));
+                    remove(ref(db, 'allowedStudents'));
+                    set(ref(db, 'activeClassName'), "");
+                } else { return; }
+            }
+            remove(ref(db, 'classLibrary/' + name));
+        };
+
         window.removeSingleStudent = (n) => {
-            if(!confirm(`Delete ${n}?`)) return;
             const newList = allowed.filter(x => x !== n);
             set(ref(db, 'allowedStudents'), newList);
             if(activeClass) set(ref(db, 'classLibrary/' + activeClass), newList);
         };
 
-        window.deleteFromLibrary = (name) => {
-            if(confirm(`Delete ${name}?`)) remove(ref(db, 'classLibrary/' + name));
-        };
-
         window.resetCurrentVotes = () => {
-            if(confirm("Wipe current votes?")) { remove(ref(db, 'votes')); remove(ref(db, 'voted')); }
+            if(confirm("Wipe all votes for the current class?")) { remove(ref(db, 'votes')); remove(ref(db, 'voted')); }
         };
 
         window.revealWinner = () => {
             let counts = {1:0, 2:0, 3:0, 4:0};
             Object.values(votes).forEach(v => v.choices.forEach(c => counts[c]++));
             let max = Math.max(...Object.values(counts));
-            if(max === 0) return alert("No votes!");
+            if(max === 0) return alert("No votes recorded.");
             for(let i=1; i<=4; i++){
                 const b = document.getElementById('bar'+i);
-                if(counts[i] === max) { b.classList.add('winning-bar'); b.classList.remove('fade-out'); }
-                else { b.classList.add('fade-out'); b.classList.remove('winning-bar'); }
+                if(counts[i] === max && max > 0) { b.classList.add('winning-bar'); }
+                else { b.classList.remove('winning-bar'); }
             }
         };
     </script>

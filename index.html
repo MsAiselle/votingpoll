@@ -7,10 +7,10 @@
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: #FFF0F0; display: flex; justify-content: center; padding: 20px; color: #555; }
         .card { background: white; padding: 30px; border-radius: 25px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
-        .btn { padding: 25px 10px; border: 2px solid #FFE4E1; border-radius: 15px; background: white; cursor: pointer; font-weight: bold; color: #777; transition: 0.3s; }
+        .btn { padding: 25px 10px; border: 2px solid #FFE4E1; border-radius: 15px; background: white; cursor: pointer; font-weight: bold; color: #777; transition: 0.3s; font-size: 16px; }
         .selected { background: #FFB7B2; color: white; border-color: #FFB7B2; box-shadow: 0 5px 15px rgba(255,183,178,0.4); }
         input { padding: 15px; width: 85%; margin-bottom: 15px; border-radius: 12px; border: 1px solid #FFE4E1; font-size: 18px; text-align: center; }
-        #sub { width: 100%; padding: 18px; background: #B2e2f2; color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; display: none; }
+        #sub { width: 100%; padding: 18px; background: #B2e2f2; color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; display: none; font-size: 18px; }
         #toast { visibility: hidden; min-width: 250px; background: #555; color: #fff; text-align: center; border-radius: 10px; padding: 16px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 99; }
         .show { visibility: visible !important; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
@@ -21,7 +21,7 @@
     <div class="card">
         <div id="loginSection">
             <h2 style="color: #FFB7B2;">您好! Welcome</h2>
-            <p>Enter Student Number and Name<br><small></small></p>
+            <p>Enter Student Number and Name<br><small>(Ex: 10 許晉豪)</small></p>
             <input type="text" id="sName" placeholder="座號 姓名">
             <button id="startBtn" onclick="checkName()" style="padding:12px 30px; background:#FFB7B2; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; width:100%;">Start Voting</button>
         </div>
@@ -29,10 +29,10 @@
         <div id="voteSection" style="display:none">
             <p>Please pick <b>2</b> groups:</p>
             <div class="grid">
-                <button class="btn" onclick="sel(1)">Group 1</button>
-                <button class="btn" onclick="sel(2)">Group 2</button>
-                <button class="btn" onclick="sel(3)">Group 3</button>
-                <button class="btn" onclick="sel(4)">Group 4</button>
+                <button class="btn" id="g1" onclick="sel(1)">Group 1</button>
+                <button class="btn" id="g2" onclick="sel(2)">Group 2</button>
+                <button class="btn" id="g3" onclick="sel(3)">Group 3</button>
+                <button class="btn" id="g4" onclick="sel(4)">Group 4</button>
             </div>
             <button id="sub" onclick="cast()">Submit My Votes</button>
         </div>
@@ -44,7 +44,7 @@
         import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         // --- PASTE YOUR FIREBASE CONFIG BELOW ---
-       const firebaseConfig = {
+         const firebaseConfig = {
   apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
   authDomain: "classvote-9fde8.firebaseapp.com",
   projectId: "classvote-9fde8",
@@ -101,14 +101,29 @@
         };
 
         window.sel = (n) => {
-            const btns = document.querySelectorAll('.btn');
+            // 1. If group is already selected, unselect it
             if(selected.includes(n)) {
                 selected = selected.filter(x => x !== n);
-                btns[n-1].classList.remove('selected');
-            } else if(selected.length < 2) {
-                selected.push(n);
-                btns[n-1].classList.add('selected');
+            } 
+            // 2. If picking a new group and we already have 2, remove the oldest pick
+            else {
+                if(selected.length === 2) {
+                    selected.shift(); // Removes the first item in the list
+                }
+                selected.push(n); // Adds the new pick
             }
+
+            // 3. Update all button colors
+            for(let i=1; i<=4; i++) {
+                const b = document.getElementById('g' + i);
+                if(selected.includes(i)) {
+                    b.classList.add('selected');
+                } else {
+                    b.classList.remove('selected');
+                }
+            }
+
+            // 4. Only show submit button if exactly 2 are picked
             document.getElementById('sub').style.display = (selected.length === 2) ? 'block' : 'none';
         };
 

@@ -1,44 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Teacher Panel - Pastel Pro</title>
+    <title>Teacher Panel - Class Manager</title>
     <style>
-        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; padding: 20px; background: #F0F4FF; display: flex; flex-direction: column; align-items: center; color: #444; }
-        .dashboard { display: flex; gap: 30px; width: 100%; max-width: 1100px; }
-        .section { background: #FFFFFF; padding: 25px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); flex: 1; }
-        .chart { display: flex; align-items: flex-end; justify-content: center; height: 350px; gap: 20px; margin: 20px 0; border-bottom: 2px solid #E8EEFF; padding-bottom: 10px; }
-        .bar { width: 70px; background: #AEC6CF; border-radius: 10px 10px 0 0; transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
-        .bar span { position: absolute; top: -30px; width: 100%; text-align: center; font-weight: bold; }
-        .winning-bar { background: #77DD77 !important; width: 100px !important; box-shadow: 0 0 25px rgba(119, 221, 119, 0.4); transform: scale(1.05); }
-        .fade-out { opacity: 0.4; filter: grayscale(50%); }
-        .student-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #F0F0F0; }
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; padding: 20px; background: #F0F4FF; color: #444; display: flex; flex-direction: column; align-items: center; }
+        .container { display: flex; gap: 20px; width: 100%; max-width: 1200px; align-items: flex-start; }
+        .section { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        /* Left: Class Manager */
+        .manager { width: 300px; }
+        .class-card { background: #f9f9f9; padding: 10px; margin-top: 10px; border-radius: 10px; border: 1px solid #e0e0e0; }
+        .active-label { color: #77DD77; font-weight: bold; font-size: 12px; }
+
+        /* Middle: Live Results */
+        .results { flex: 2; text-align: center; }
+        .chart { display: flex; align-items: flex-end; justify-content: center; height: 300px; gap: 15px; margin: 20px 0; border-bottom: 2px solid #eee; }
+        .bar { width: 60px; background: #AEC6CF; border-radius: 8px 8px 0 0; transition: 0.5s all; position: relative; }
+        .bar span { position: absolute; top: -25px; width: 100%; font-weight: bold; }
+        .winning-bar { background: #77DD77 !important; transform: scale(1.1); box-shadow: 0 0 20px rgba(119,221,119,0.4); }
+        .fade-out { opacity: 0.3; }
+
+        /* Right: Current Active Roster */
+        .roster { width: 300px; }
+        .student-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
         .voted { color: #77DD77; font-weight: bold; }
-        .waiting { color: #B0B0B0; font-style: italic; }
-        .del-btn { color: #FF6961; cursor: pointer; border: 1px solid #FF6961; background: white; border-radius: 5px; padding: 4px 8px; font-size: 11px; }
-        button#main-btn { padding: 15 (8px; cursor: pointer; border-radius: 12px; border: none; background: #779ECB; color: white; font-weight: bold; width: 100%; font-size: 16px; }
-        input { padding: 12px; border: 1px solid #D1D9FF; border-radius: 10px; width: 70%; margin-bottom: 10px; }
+        
+        button { cursor: pointer; border-radius: 8px; border: none; font-weight: bold; transition: 0.2s; }
+        .btn-blue { background: #779ECB; color: white; padding: 10px; width: 100%; }
+        .btn-green { background: #77DD77; color: white; padding: 8px; font-size: 12px; }
+        .btn-red { background: none; color: #FF6961; font-size: 11px; margin-top: 10px; }
+        textarea, input { width: 90%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
-    <h1>Classroom Poll Dashboard</h1>
-    <div class="dashboard">
-        <div class="section">
-            <h3>Live Results</h3>
-            <div class="chart" id="chartArea">
-                <div id="bar1" class="bar" style="height: 10px;"><span>G1: 0</span></div>
-                <div id="bar2" class="bar" style="height: 10px;"><span>G2: 0</span></div>
-                <div id="bar3" class="bar" style="height: 10px;"><span>G3: 0</span></div>
-                <div id="bar4" class="bar" style="height: 10px;"><span>G4: 0</span></div>
-            </div>
-            <button id="main-btn" onclick="revealWinner()" style="background: #77DD77; padding:15px; border-radius:12px; border:none; color:white; font-weight:bold; cursor:pointer;">🏆 Finalize & Show Winner</button>
-            <button onclick="clearAll()" style="background:none; color:#FF6961; border:none; width:100%; margin-top:15px; cursor:pointer;">Reset All Data</button>
+    <h1>Classroom Poll Manager</h1>
+    
+    <div class="container">
+        <div class="section manager">
+            <h3>1. Class Library</h3>
+            <input type="text" id="className" placeholder="Class Name (e.g. 6A)">
+            <textarea id="classList" rows="5" placeholder="Paste names: 101 John, 102 Mary..."></textarea>
+            <button class="btn-blue" onclick="saveClass()">Save to Library</button>
+            <div id="libraryItems"></div>
         </div>
-        <div class="section">
-            <h3>Student Roster (<span id="vcount">0</span> Voted)</h3>
-            <p style="font-size: 12px; color: #888;"></p>
-            <input type="text" id="massInput" placeholder="Add students...">
-            <button onclick="addStudents()" style="background:#779ECB; color:white; border:none; padding:12px; border-radius:10px; cursor:pointer;">Add</button>
-            <div id="rosterList" style="max-height: 400px; overflow-y: auto; margin-top: 10px;"></div>
+
+        <div class="section results">
+            <h3 id="activeTitle">No Active Class</h3>
+            <div class="chart">
+                <div id="bar1" class="bar" style="height:10px"><span>G1: 0</span></div>
+                <div id="bar2" class="bar" style="height:10px"><span>G2: 0</span></div>
+                <div id="bar3" class="bar" style="height:10px"><span>G3: 0</span></div>
+                <div id="bar4" class="bar" style="height:10px"><span>G4: 0</span></div>
+            </div>
+            <button id="main-btn" class="btn-blue" style="background:#77DD77; padding:15px" onclick="revealWinner()">🏆 Show Winner</button>
+            <button class="btn-red" onclick="resetCurrentVotes()">Clear Current Votes Only</button>
+        </div>
+
+        <div class="section roster">
+            <h3>Active Students (<span id="vCount">0</span>)</h3>
+            <div id="rosterItems"></div>
         </div>
     </div>
 
@@ -56,73 +76,98 @@
 };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+
+        let library = {};
+        let activeClass = "";
         let allowed = [];
         let votes = {};
-        let counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
 
+        // Listen to everything
         onValue(ref(db, '/'), (snap) => {
             const data = snap.val() || {};
+            library = data.classLibrary || {};
+            activeClass = data.activeClassName || "";
             allowed = data.allowedStudents || [];
             votes = data.votes || {};
             updateUI();
         });
 
         function updateUI() {
-            counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+            // Update Library List
+            const libDiv = document.getElementById('libraryItems');
+            libDiv.innerHTML = "";
+            Object.keys(library).forEach(name => {
+                const isActive = (name === activeClass);
+                libDiv.innerHTML += `
+                    <div class="class-card">
+                        <b>${name}</b> ${isActive ? '<span class="active-label">● ACTIVE</span>' : ''}<br>
+                        <button class="btn-green" style="margin-top:5px" onclick="uploadClass('${name}')">Upload & Start Voting</button>
+                        <button class="btn-red" style="margin-left:5px" onclick="deleteFromLibrary('${name}')">Delete</button>
+                    </div>`;
+            });
+
+            // Update Chart
+            let counts = {1:0, 2:0, 3:0, 4:0};
             Object.values(votes).forEach(v => v.choices.forEach(c => counts[c]++));
-            for(let i=1; i<=4; i++) {
+            for(let i=1; i<=4; i++){
                 const b = document.getElementById('bar'+i);
-                b.style.height = (10 + (counts[i] * 40)) + "px";
+                b.style.height = (10 + (counts[i]*40)) + "px";
                 b.querySelector('span').innerText = `G${i}: ${counts[i]}`;
             }
-            const list = document.getElementById('rosterList');
-            list.innerHTML = "";
+
+            // Update Active Roster
+            document.getElementById('activeTitle').innerText = activeClass ? "Active: " + activeClass : "Select a Class";
+            const rosDiv = document.getElementById('rosterItems');
+            rosDiv.innerHTML = "";
             let vTotal = 0;
             allowed.forEach(n => {
                 const hasVoted = Object.values(votes).some(v => v.name === n);
                 if(hasVoted) vTotal++;
-                list.innerHTML += `
-                    <div class="student-item">
-                        <span class="${hasVoted?'voted':'waiting'}">${n} ${hasVoted?'Voted ✓':'Waiting...'}</span>
-                        <button class="del-btn" onclick="removeStudent('${n}')">Delete Student</button>
-                    </div>`;
+                rosDiv.innerHTML += `<div class="student-item"><span class="${hasVoted?'voted':''}">${n} ${hasVoted?'✓':''}</span></div>`;
             });
-            document.getElementById('vcount').innerText = vTotal;
+            document.getElementById('vCount').innerText = vTotal;
         }
 
-        window.addStudents = () => {
-            const input = document.getElementById('massInput');
-            const names = input.value.split(',').map(n => n.trim()).filter(n => n !== "" && !allowed.includes(n));
-            set(ref(db, 'allowedStudents'), [...allowed, ...names]);
-            input.value = "";
+        window.saveClass = () => {
+            const name = document.getElementById('className').value.trim();
+            const listStr = document.getElementById('classList').value;
+            if(!name || !listStr) return alert("Enter Name and Students!");
+            const list = listStr.split(',').map(n => n.trim()).filter(n => n !== "");
+            set(ref(db, 'classLibrary/' + name), list);
+            document.getElementById('className').value = "";
+            document.getElementById('classList').value = "";
         };
 
-        window.removeStudent = (n) => {
-            if(!confirm(`Delete ${n}?`)) return;
-            // Matches the safety cleaning in index.html
-            const fbKey = n.replace(/[\s\u3000\.]/g, '_');
-            set(ref(db, 'allowedStudents'), allowed.filter(x => x !== n));
-            Object.keys(votes).forEach(k => { if(votes[k].name === n) remove(ref(db, 'votes/'+k)); });
-            remove(ref(db, 'voted/' + fbKey));
+        window.uploadClass = (name) => {
+            if(!confirm(`Upload ${name}? This will clear ALL current votes and replace the student list.`)) return;
+            // 1. Set the names to the active allowed list
+            set(ref(db, 'allowedStudents'), library[name]);
+            // 2. Set the active name
+            set(ref(db, 'activeClassName'), name);
+            // 3. WIPE ALL VOTES and Voted-locks
+            remove(ref(db, 'votes'));
+            remove(ref(db, 'voted'));
+        };
+
+        window.deleteFromLibrary = (name) => {
+            if(confirm(`Remove ${name} from library?`)) remove(ref(db, 'classLibrary/' + name));
+        };
+
+        window.resetCurrentVotes = () => {
+            if(confirm("Clear current votes?")) { remove(ref(db, 'votes')); remove(ref(db, 'voted')); }
         };
 
         window.revealWinner = () => {
+            let counts = {1:0, 2:0, 3:0, 4:0};
+            Object.values(votes).forEach(v => v.choices.forEach(c => counts[c]++));
             let max = Math.max(...Object.values(counts));
-            if(max === 0) return alert("No votes yet!");
-            let winners = [];
-            for(let i=1; i<=4; i++) {
+            if(max === 0) return alert("No votes!");
+            for(let i=1; i<=4; i++){
                 const b = document.getElementById('bar'+i);
-                if(counts[i] === max) {
-                    b.classList.add('winning-bar'); b.classList.remove('fade-out');
-                    winners.push("Group " + i);
-                } else {
-                    b.classList.add('fade-out'); b.classList.remove('winning-bar');
-                }
+                if(counts[i] === max) { b.classList.add('winning-bar'); b.classList.remove('fade-out'); }
+                else { b.classList.add('fade-out'); b.classList.remove('winning-bar'); }
             }
-            setTimeout(() => alert(winners.length > 1 ? "🤝 TIE: " + winners.join(" & ") : "🎉 WINNER: " + winners[0]), 200);
         };
-
-        window.clearAll = () => { if(confirm("Wipe everything?")) remove(ref(db, '/')); };
     </script>
 </body>
 </html>

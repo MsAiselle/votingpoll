@@ -33,7 +33,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = { PASTE_YOUR_CONFIG_HERE };
+        const firebaseConfig = {
+  apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
+  authDomain: "classvote-9fde8.firebaseapp.com",
+  projectId: "classvote-9fde8",
+  storageBucket: "classvote-9fde8.firebasestorage.app",
+  messagingSenderId: "592462827187",
+  appId: "1:592462827187:web:306d4205364cd5c5496ac6"
+};
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 

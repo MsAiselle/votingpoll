@@ -6,51 +6,58 @@
         body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; }
         .dashboard { display: flex; gap: 30px; width: 100%; max-width: 1000px; }
         .section { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex: 1; }
-        .chart { display: flex; align-items: flex-end; justify-content: center; height: 250px; gap: 15px; margin: 20px 0; border-bottom: 2px solid #eee; }
-        .bar { width: 50px; background: #2196F3; border-radius: 5px 5px 0 0; transition: 0.5s all; position: relative; }
-        .bar span { position: absolute; top: -25px; width: 100%; text-align: center; font-size: 12px; font-weight: bold; }
-        .winner { background: #FFD700 !important; box-shadow: 0 0 15px gold; }
+        
+        /* Chart Styles */
+        .chart { display: flex; align-items: flex-end; justify-content: center; height: 350px; gap: 20px; margin: 20px 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .bar { width: 70px; background: #2196F3; border-radius: 8px 8px 0 0; transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; opacity: 1; }
+        .bar span { position: absolute; top: -30px; width: 100%; text-align: center; font-weight: bold; font-size: 14px; color: #333; }
+        
+        /* Winner Animation Classes */
+        .winning-bar { background: #4CAF50 !important; width: 120px !important; box-shadow: 0 0 30px rgba(76, 175, 80, 0.6); transform: scale(1.05); z-index: 10; }
+        .winning-bar span { font-size: 24px !important; top: -45px !important; color: #2E7D32 !important; }
+        .fade-out { opacity: 0.3; transform: scale(0.9); }
+
+        /* Roster Styles */
         .student-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; }
         .voted { color: #4CAF50; font-weight: bold; }
         .not-voted { color: #999; font-style: italic; }
         .delete-btn { color: #ff4444; cursor: pointer; border: none; background: none; font-weight: bold; }
-        input { padding: 10px; width: 70%; border: 1px solid #ddd; border-radius: 5px; }
-        button { padding: 10px 15px; cursor: pointer; border-radius: 5px; border: none; background: #2196F3; color: white; }
+        input { padding: 10px; width: 65%; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 15px; cursor: pointer; border-radius: 5px; border: none; background: #2196F3; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Teacher Control Panel</h1>
+    <h1>Classroom Poll Dashboard</h1>
     
     <div class="dashboard">
         <div class="section">
             <h3>Live Results</h3>
-            <div class="chart">
+            <div class="chart" id="chartArea">
                 <div id="bar1" class="bar" style="height: 10px;"><span>G1: 0</span></div>
                 <div id="bar2" class="bar" style="height: 10px;"><span>G2: 0</span></div>
                 <div id="bar3" class="bar" style="height: 10px;"><span>G3: 0</span></div>
                 <div id="bar4" class="bar" style="height: 10px;"><span>G4: 0</span></div>
             </div>
-            <button onclick="revealWinner()" style="background: #4CAF50; width: 100%;">Finalize & Show Winner</button>
-            <button onclick="clearAll()" style="background: none; color: red; width: 100%; margin-top: 10px;">Reset All Data</button>
+            <button onclick="revealWinner()" id="winnerBtn" style="background: #4CAF50; width: 100%; font-size: 18px; padding: 15px;">🏆 Finalize & Show Winner</button>
+            <button onclick="clearAll()" style="background: none; color: red; width: 100%; margin-top: 10px; font-size: 12px;">Reset All Data</button>
         </div>
 
         <div class="section">
-            <h3>Student Roster</h3>
+            <h3>Student Roster (<span id="votedCount">0</span> Voted)</h3>
             <div style="margin-bottom: 15px;">
                 <input type="text" id="newStudent" placeholder="Student Name">
-                <button onclick="addOneStudent()">Add</button>
+                <button onclick="addOneStudent()">+ Add</button>
             </div>
-            <div id="rosterList">
-                </div>
+            <div id="rosterList"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         // --- PASTE YOUR FIREBASE CONFIG BELOW ---
-         const firebaseConfig = {
+        const firebaseConfig = {
   apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
   authDomain: "classvote-9fde8.firebaseapp.com",
   projectId: "classvote-9fde8",
@@ -64,8 +71,8 @@
         const db = getDatabase(app);
         let currentVotes = {};
         let allowedStudents = [];
+        let counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
 
-        // 1. LISTEN FOR CHANGES (REAL-TIME)
         onValue(ref(db, '/'), (snapshot) => {
             const data = snapshot.val() || {};
             allowedStudents = data.allowedStudents || [];
@@ -74,35 +81,57 @@
         });
 
         function updateUI() {
-            // Update Bars
-            let counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+            counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
             Object.values(currentVotes).forEach(v => {
                 v.choices.forEach(c => counts[c]++);
             });
 
             for(let i=1; i<=4; i++) {
                 const bar = document.getElementById('bar' + i);
-                bar.style.height = (10 + (counts[i] * 30)) + "px";
+                // Calculate height: 10px base + 40px per vote
+                bar.style.height = (10 + (counts[i] * 40)) + "px";
                 bar.querySelector('span').innerText = `G${i}: ${counts[i]}`;
             }
 
-            // Update Roster
             const listDiv = document.getElementById('rosterList');
             listDiv.innerHTML = "";
+            let votedTotal = 0;
             
             allowedStudents.forEach(name => {
                 const hasVoted = Object.values(currentVotes).some(v => v.name === name);
+                if(hasVoted) votedTotal++;
                 const item = document.createElement('div');
                 item.className = 'student-item';
                 item.innerHTML = `
-                    <span class="${hasVoted ? 'voted' : 'not-voted'}">${name} ${hasVoted ? '✓' : '(Waiting...)'}</span>
+                    <span class="${hasVoted ? 'voted' : 'not-voted'}">${name} ${hasVoted ? '✓' : ''}</span>
                     <button class="delete-btn" onclick="removeStudent('${name}')">✕</button>
                 `;
                 listDiv.appendChild(item);
             });
+            document.getElementById('votedCount').innerText = votedTotal;
         }
 
-        // 2. ADD STUDENT (Real-time)
+        window.revealWinner = () => {
+            // Find which group has the most votes
+            let winner = Object.keys(counts).reduce((a, b) => counts[a] >= counts[b] ? a : b);
+            
+            // Apply visual effects
+            for(let i=1; i<=4; i++) {
+                const bar = document.getElementById('bar' + i);
+                if(i == winner) {
+                    bar.classList.add('winning-bar');
+                    bar.classList.remove('fade-out');
+                } else {
+                    bar.classList.add('fade-out');
+                    bar.classList.remove('winning-bar');
+                }
+            }
+            
+            // Optional: Celebrate!
+            const winnerName = "Group " + winner;
+            setTimeout(() => alert("🎉 CONGRATULATIONS " + winnerName + "! 🎉"), 500);
+        };
+
         window.addOneStudent = () => {
             const input = document.getElementById('newStudent');
             const name = input.value.trim();
@@ -113,31 +142,17 @@
             }
         };
 
-        // 3. REMOVE STUDENT & DEDUCT VOTE
         window.removeStudent = async (name) => {
-            if(!confirm(`Remove ${name}? This will also delete their votes.`)) return;
-
-            // Remove from allowed list
+            if(!confirm(`Delete ${name}?`)) return;
             const newList = allowedStudents.filter(n => n !== name);
             await set(ref(db, 'allowedStudents'), newList);
-
-            // Find and delete their vote from the 'votes' list
-            Object.keys(currentVotes).forEach(voteID => {
-                if(currentVotes[voteID].name === name) {
-                    remove(ref(db, 'votes/' + voteID));
-                }
+            Object.keys(currentVotes).forEach(id => {
+                if(currentVotes[id].name === name) remove(ref(db, 'votes/' + id));
             });
-
-            // Remove from the 'already voted' lock list
             remove(ref(db, 'voted/' + name.replace(/\./g, '_')));
         };
 
-        window.revealWinner = () => {
-            // Finding max logic...
-            alert("Winner revealed!");
-        };
-
-        window.clearAll = () => { if(confirm("Clear ALL?")) remove(ref(db, '/')); };
+        window.clearAll = () => { if(confirm("Wipe all data?")) remove(ref(db, '/')); };
     </script>
 </body>
 </html>

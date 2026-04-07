@@ -43,7 +43,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- PASTE YOUR FIREBASE CONFIG BELOW ---
          const firebaseConfig = {
   apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
   authDomain: "classvote-9fde8.firebaseapp.com",
@@ -52,8 +51,6 @@
   messagingSenderId: "592462827187",
   appId: "1:592462827187:web:306d4205364cd5c5496ac6"
 };
-        // ----------------------------------------
-
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         let selected = [];
@@ -66,7 +63,7 @@
         }
 
         function clean(str) { return str.replace(/[\s\u3000]/g, '').toLowerCase(); }
-        function firebaseSafe(str) { return str.replace(/[\s\u3000\.]/g, '_'); }
+        function firebaseSafe(str) { return str.replace(/[\s\u3000\.\#\$\/\[\]]/g, '_'); }
 
         window.checkName = async () => {
             const btn = document.getElementById('startBtn');
@@ -101,29 +98,15 @@
         };
 
         window.sel = (n) => {
-            // 1. If group is already selected, unselect it
-            if(selected.includes(n)) {
-                selected = selected.filter(x => x !== n);
-            } 
-            // 2. If picking a new group and we already have 2, remove the oldest pick
+            if(selected.includes(n)) { selected = selected.filter(x => x !== n); } 
             else {
-                if(selected.length === 2) {
-                    selected.shift(); // Removes the first item in the list
-                }
-                selected.push(n); // Adds the new pick
+                if(selected.length === 2) selected.shift();
+                selected.push(n);
             }
-
-            // 3. Update all button colors
             for(let i=1; i<=4; i++) {
                 const b = document.getElementById('g' + i);
-                if(selected.includes(i)) {
-                    b.classList.add('selected');
-                } else {
-                    b.classList.remove('selected');
-                }
+                selected.includes(i) ? b.classList.add('selected') : b.classList.remove('selected');
             }
-
-            // 4. Only show submit button if exactly 2 are picked
             document.getElementById('sub').style.display = (selected.length === 2) ? 'block' : 'none';
         };
 

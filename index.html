@@ -21,7 +21,7 @@
     <div class="card">
         <div id="loginSection">
             <h2 style="color: #FFB7B2;">您好! Welcome</h2>
-            <p>Enter Student Number and Name<br><small></small></p>
+            <p>Enter Student Number and Name<br><small>(Ex: 10 許晉豪)</small></p>
             <input type="text" id="sName" placeholder="座號 姓名">
             <button id="startBtn" onclick="checkName()" style="padding:12px 30px; background:#FFB7B2; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; width:100%;">Start Voting</button>
         </div>
@@ -43,6 +43,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // PASTE YOUR CONFIG HERE
          const firebaseConfig = {
   apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
   authDomain: "classvote-9fde8.firebaseapp.com",
@@ -51,6 +52,7 @@
   messagingSenderId: "592462827187",
   appId: "1:592462827187:web:306d4205364cd5c5496ac6"
 };
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         let selected = [];

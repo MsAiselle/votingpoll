@@ -15,7 +15,7 @@
         .voted { color: #77DD77; font-weight: bold; }
         .waiting { color: #B0B0B0; font-style: italic; }
         .del-btn { color: #FF6961; cursor: pointer; border: 1px solid #FF6961; background: white; border-radius: 5px; padding: 4px 8px; font-size: 11px; }
-        button#main-btn { padding: 15px; cursor: pointer; border-radius: 12px; border: none; background: #779ECB; color: white; font-weight: bold; width: 100%; font-size: 16px; }
+        button#main-btn { padding: 15 (8px; cursor: pointer; border-radius: 12px; border: none; background: #779ECB; color: white; font-weight: bold; width: 100%; font-size: 16px; }
         input { padding: 12px; border: 1px solid #D1D9FF; border-radius: 10px; width: 70%; margin-bottom: 10px; }
     </style>
 </head>
@@ -30,13 +30,13 @@
                 <div id="bar3" class="bar" style="height: 10px;"><span>G3: 0</span></div>
                 <div id="bar4" class="bar" style="height: 10px;"><span>G4: 0</span></div>
             </div>
-            <button id="main-btn" onclick="revealWinner()">🏆 Finalize & Show Winner</button>
+            <button id="main-btn" onclick="revealWinner()" style="background: #77DD77; padding:15px; border-radius:12px; border:none; color:white; font-weight:bold; cursor:pointer;">🏆 Finalize & Show Winner</button>
             <button onclick="clearAll()" style="background:none; color:#FF6961; border:none; width:100%; margin-top:15px; cursor:pointer;">Reset All Data</button>
         </div>
         <div class="section">
             <h3>Student Roster (<span id="vcount">0</span> Voted)</h3>
-            <p style="font-size: 12px; color: #888;"></p>
-            <input type="text" id="massInput" placeholder="Add multiple students separated by commas...">
+            <p style="font-size: 12px; color: #888;">Example: 10 許晉豪, 11 王小明</p>
+            <input type="text" id="massInput" placeholder="Add students...">
             <button onclick="addStudents()" style="background:#779ECB; color:white; border:none; padding:12px; border-radius:10px; cursor:pointer;">Add</button>
             <div id="rosterList" style="max-height: 400px; overflow-y: auto; margin-top: 10px;"></div>
         </div>
@@ -46,14 +46,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-         const firebaseConfig = {
-  apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
-  authDomain: "classvote-9fde8.firebaseapp.com",
-  projectId: "classvote-9fde8",
-  storageBucket: "classvote-9fde8.firebasestorage.app",
-  messagingSenderId: "592462827187",
-  appId: "1:592462827187:web:306d4205364cd5c5496ac6"
-};
+        const firebaseConfig = { /* PASTE YOUR CONFIG HERE */ };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         let allowed = [];
@@ -99,6 +92,7 @@
 
         window.removeStudent = (n) => {
             if(!confirm(`Delete ${n}?`)) return;
+            // Matches the safety cleaning in index.html
             const fbKey = n.replace(/[\s\u3000\.]/g, '_');
             set(ref(db, 'allowedStudents'), allowed.filter(x => x !== n));
             Object.keys(votes).forEach(k => { if(votes[k].name === n) remove(ref(db, 'votes/'+k)); });

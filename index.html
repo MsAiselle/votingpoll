@@ -1,90 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Vote</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .group-btn { padding: 20px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .group-btn.selected { background: #4CAF50; color: white; border-color: #388E3C; }
-        button#submit { width: 100%; padding: 15px; background: #2196F3; color: white; border: none; border-radius: 8px; margin-top: 20px; font-size: 18px; cursor: pointer; display: none; }
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .btn { padding: 20px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-weight: bold; }
+        .selected { background: #4CAF50; color: white; border-color: #388E3C; }
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 5px; padding: 16px; position: fixed; z-index: 1; bottom: 30px; font-size: 17px; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2 id="status">Enter Your Name</h2>
-        <input type="text" id="studentName" placeholder="Full Name">
-        <button onclick="verifyStudent()" id="loginBtn" style="padding: 10px 20px;">Check Name</button>
+        <div id="loginSection">
+            <h2>Enter Name</h2>
+            <input type="text" id="sName" style="padding:12px; width:80%; margin-bottom:10px; border-radius:5px; border:1px solid #ccc">
+            <button onclick="checkName()" style="padding:10px 20px; background:#2196F3; color:white; border:none; border-radius:5px">Login</button>
+        </div>
 
-        <div id="votingArea" style="display:none;">
-            <p>Select <b>exactly 2</b> different groups:</p>
+        <div id="voteSection" style="display:none">
+            <p>Pick **exactly 2** groups:</p>
             <div class="grid">
-                <button class="group-btn" onclick="selectGroup(1)">Group 1</button>
-                <button class="group-btn" onclick="selectGroup(2)">Group 2</button>
-                <button class="group-btn" onclick="selectGroup(3)">Group 3</button>
-                <button class="group-btn" onclick="selectGroup(4)">Group 4</button>
+                <button class="btn" onclick="sel(1)">Group 1</button>
+                <button class="btn" onclick="sel(2)">Group 2</button>
+                <button class="btn" onclick="sel(3)">Group 3</button>
+                <button class="btn" onclick="sel(4)">Group 4</button>
             </div>
-            <button id="submit" onclick="castVote()">Submit Votes</button>
+            <button id="sub" onclick="cast()" style="display:none; width:100%; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px">Submit Vote</button>
         </div>
     </div>
+    <div id="toast"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // PASTE YOUR FIREBASE CONFIG HERE
-        const firebaseConfig = {
-  apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
-  authDomain: "classvote-9fde8.firebaseapp.com",
-  projectId: "classvote-9fde8",
-  storageBucket: "classvote-9fde8.firebasestorage.app",
-  messagingSenderId: "592462827187",
-  appId: "1:592462827187:web:306d4205364cd5c5496ac6"
-};
+        const firebaseConfig = { /* PASTE YOUR CONFIG HERE */ };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         let selected = [];
-        let currentName = "";
+        let name = "";
 
-        window.verifyStudent = async () => {
-            currentName = document.getElementById('studentName').value.trim();
-            const snapshot = await get(ref(db, 'allowedStudents'));
-            const allowed = snapshot.val() || [];
-            const votedSnap = await get(ref(db, 'voted/' + currentName.replace(/\./g, '_')));
+        function showToast(msg) {
+            const x = document.getElementById("toast");
+            x.innerText = msg;
+            x.className = "show";
+            setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
+        }
 
-            if (!allowed.includes(currentName)) {
-                alert("Name not on the list!");
+        window.checkName = async () => {
+            name = document.getElementById('sName').value.trim();
+            const snap = await get(ref(db, 'allowedStudents'));
+            const allowed = snap.val() || [];
+            const votedSnap = await get(ref(db, 'voted/' + name.replace(/\./g, '_')));
+
+            if (!allowed.includes(name)) {
+                showToast("Name not found on roster!");
             } else if (votedSnap.exists()) {
-                alert("You already voted!");
+                showToast("You have already voted!");
             } else {
-                document.getElementById('votingArea').style.display = 'block';
-                document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('studentName').disabled = true;
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('voteSection').style.display = 'block';
             }
         };
 
-        window.selectGroup = (num) => {
-            const btns = document.getElementsByClassName('group-btn');
-            if (selected.includes(num)) {
-                selected = selected.filter(n => n !== num);
-                btns[num-1].classList.remove('selected');
-            } else if (selected.length < 2) {
-                selected.push(num);
-                btns[num-1].classList.add('selected');
+        window.sel = (n) => {
+            const btns = document.querySelectorAll('.btn');
+            if(selected.includes(n)) {
+                selected = selected.filter(x => x !== n);
+                btns[n-1].classList.remove('selected');
+            } else if(selected.length < 2) {
+                selected.push(n);
+                btns[n-1].classList.add('selected');
             }
-            document.getElementById('submit').style.display = selected.length === 2 ? 'block' : 'none';
+            document.getElementById('sub').style.display = selected.length === 2 ? 'block' : 'none';
         };
 
-        window.castVote = async () => {
-            const voteRef = ref(db, 'votes');
-            await push(voteRef, { name: currentName, choices: selected });
-            await set(ref(db, 'voted/' + currentName.replace(/\./g, '_')), true);
-            alert("Success! Thank you.");
-            location.reload();
+        window.cast = async () => {
+            await push(ref(db, 'votes'), { name: name, choices: selected });
+            await set(ref(db, 'voted/' + name.replace(/\./g, '_')), true);
+            showToast("Success! Vote recorded.");
+            setTimeout(() => location.reload(), 2000);
         };
     </script>
 </body>

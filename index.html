@@ -4,14 +4,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Vote - Pastel</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #FFF0F0; display: flex; justify-content: center; padding: 20px; color: #555; }
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: #FFF0F0; display: flex; justify-content: center; padding: 20px; color: #555; }
         .card { background: white; padding: 30px; border-radius: 25px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
         .btn { padding: 25px 10px; border: 2px solid #FFE4E1; border-radius: 15px; background: white; cursor: pointer; font-weight: bold; color: #777; transition: 0.3s; }
         .selected { background: #FFB7B2; color: white; border-color: #FFB7B2; box-shadow: 0 5px 15px rgba(255,183,178,0.4); }
-        input { padding: 15px; width: 85%; margin-bottom: 15px; border-radius: 12px; border: 1px solid #FFE4E1; font-size: 16px; }
+        input { padding: 15px; width: 85%; margin-bottom: 15px; border-radius: 12px; border: 1px solid #FFE4E1; font-size: 18px; text-align: center; }
         #sub { width: 100%; padding: 18px; background: #B2e2f2; color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; display: none; }
-        #toast { visibility: hidden; min-width: 250px; background: #555; color: #fff; text-align: center; border-radius: 10px; padding: 16px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); }
+        #toast { visibility: hidden; min-width: 250px; background: #555; color: #fff; text-align: center; border-radius: 10px; padding: 16px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 99; }
         .show { visibility: visible !important; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
@@ -20,14 +20,14 @@
 <body>
     <div class="card">
         <div id="loginSection">
-            <h2 style="color: #FFB7B2;">Welcome!</h2>
-            <p>Enter Student Number and Name</p>
-            <input type="text" id="sName" placeholder="e.g. 101 John Doe">
-            <button onclick="checkName()" style="padding:12px 30px; background:#FFB7B2; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Start Voting</button>
+            <h2 style="color: #FFB7B2;">您好! Welcome</h2>
+            <p>Enter Student Number and Name<br><small>(Ex: 10 許晉豪)</small></p>
+            <input type="text" id="sName" placeholder="座號 姓名">
+            <button id="startBtn" onclick="checkName()" style="padding:12px 30px; background:#FFB7B2; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; width:100%;">Start Voting</button>
         </div>
 
         <div id="voteSection" style="display:none">
-            <p>Pick <b>exactly 2</b> groups:</p>
+            <p>Please pick <b>2</b> groups:</p>
             <div class="grid">
                 <button class="btn" onclick="sel(1)">Group 1</button>
                 <button class="btn" onclick="sel(2)">Group 2</button>
@@ -43,28 +43,60 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = { /* PASTE YOUR CONFIG HERE */ };
+        // --- PASTE YOUR FIREBASE CONFIG BELOW ---
+       const firebaseConfig = {
+  apiKey: "AIzaSyC8CX0_ZsTf5YVbDi_y6tO_vh8JL7aepW8",
+  authDomain: "classvote-9fde8.firebaseapp.com",
+  projectId: "classvote-9fde8",
+  storageBucket: "classvote-9fde8.firebasestorage.app",
+  messagingSenderId: "592462827187",
+  appId: "1:592462827187:web:306d4205364cd5c5496ac6"
+};
+        // ----------------------------------------
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         let selected = [];
-        let name = "";
+        let officialName = "";
 
         function showToast(msg) {
-            const x = document.getElementById("toast"); x.innerText = msg; x.className = "show";
-            setTimeout(() => { x.className = ""; }, 3000);
+            const x = document.getElementById("toast"); 
+            x.innerText = msg; x.classList.add("show");
+            setTimeout(() => { x.classList.remove("show"); }, 3000);
         }
 
-        window.checkName = async () => {
-            name = document.getElementById('sName').value.trim();
-            const snap = await get(ref(db, 'allowedStudents'));
-            const allowed = snap.val() || [];
-            const votedSnap = await get(ref(db, 'voted/' + name.replace(/\./g, '_')));
+        function clean(str) { return str.replace(/[\s\u3000]/g, '').toLowerCase(); }
+        function firebaseSafe(str) { return str.replace(/[\s\u3000\.]/g, '_'); }
 
-            if (!allowed.includes(name)) { showToast("Student info not recognized!"); }
-            else if (votedSnap.exists()) { showToast("You have already voted!"); }
-            else { 
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('voteSection').style.display = 'block';
+        window.checkName = async () => {
+            const btn = document.getElementById('startBtn');
+            const inputVal = document.getElementById('sName').value;
+            if(!inputVal) return showToast("Please enter your name!");
+            btn.innerText = "Checking..."; btn.disabled = true;
+
+            try {
+                const snap = await get(ref(db, 'allowedStudents'));
+                const allowed = snap.val() || [];
+                const match = allowed.find(n => clean(n) === clean(inputVal));
+                
+                if (!match) {
+                    showToast("Name not found! 找不到姓名");
+                    btn.innerText = "Start Voting"; btn.disabled = false;
+                    return;
+                }
+
+                const votedSnap = await get(ref(db, 'voted/' + firebaseSafe(match)));
+                if (votedSnap.exists()) {
+                    showToast("Already voted! 您已投票過");
+                    btn.innerText = "Start Voting"; btn.disabled = false;
+                } else { 
+                    officialName = match;
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('voteSection').style.display = 'block';
+                }
+            } catch (error) {
+                showToast("Connection Error!");
+                btn.innerText = "Start Voting"; btn.disabled = false;
             }
         };
 
@@ -81,10 +113,17 @@
         };
 
         window.cast = async () => {
-            await push(ref(db, 'votes'), { name: name, choices: selected });
-            await set(ref(db, 'voted/' + name.replace(/\./g, '_')), true);
-            showToast("Success! Redirecting...");
-            setTimeout(() => location.reload(), 2000);
+            const subBtn = document.getElementById('sub');
+            subBtn.disabled = true;
+            try {
+                await push(ref(db, 'votes'), { name: officialName, choices: selected });
+                await set(ref(db, 'voted/' + firebaseSafe(officialName)), true);
+                showToast("Success! Redirecting...");
+                setTimeout(() => location.reload(), 2000);
+            } catch (e) {
+                showToast("Error saving vote.");
+                subBtn.disabled = false;
+            }
         };
     </script>
 </body>

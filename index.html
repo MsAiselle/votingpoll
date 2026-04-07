@@ -2,15 +2,17 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Vote</title>
+    <title>Student Vote - Pastel</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
-        .btn { padding: 20px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-weight: bold; }
-        .selected { background: #4CAF50; color: white; border-color: #388E3C; }
-        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 5px; padding: 16px; position: fixed; z-index: 1; bottom: 30px; font-size: 17px; }
-        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        body { font-family: 'Segoe UI', sans-serif; background: #FFF0F0; display: flex; justify-content: center; padding: 20px; color: #555; }
+        .card { background: white; padding: 30px; border-radius: 25px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
+        .btn { padding: 25px 10px; border: 2px solid #FFE4E1; border-radius: 15px; background: white; cursor: pointer; font-weight: bold; color: #777; transition: 0.3s; }
+        .selected { background: #FFB7B2; color: white; border-color: #FFB7B2; box-shadow: 0 5px 15px rgba(255,183,178,0.4); }
+        input { padding: 15px; width: 85%; margin-bottom: 15px; border-radius: 12px; border: 1px solid #FFE4E1; font-size: 16px; }
+        #sub { width: 100%; padding: 18px; background: #B2e2f2; color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; display: none; }
+        #toast { visibility: hidden; min-width: 250px; background: #555; color: #fff; text-align: center; border-radius: 10px; padding: 16px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); }
+        .show { visibility: visible !important; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
@@ -18,20 +20,21 @@
 <body>
     <div class="card">
         <div id="loginSection">
-            <h2>Enter Name</h2>
-            <input type="text" id="sName" style="padding:12px; width:80%; margin-bottom:10px; border-radius:5px; border:1px solid #ccc">
-            <button onclick="checkName()" style="padding:10px 20px; background:#2196F3; color:white; border:none; border-radius:5px">Login</button>
+            <h2 style="color: #FFB7B2;">Welcome!</h2>
+            <p>Enter Student Number and Name</p>
+            <input type="text" id="sName" placeholder="e.g. 101 John Doe">
+            <button onclick="checkName()" style="padding:12px 30px; background:#FFB7B2; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Start Voting</button>
         </div>
 
         <div id="voteSection" style="display:none">
-            <p>Pick **exactly 2** groups:</p>
+            <p>Pick <b>exactly 2</b> groups:</p>
             <div class="grid">
                 <button class="btn" onclick="sel(1)">Group 1</button>
                 <button class="btn" onclick="sel(2)">Group 2</button>
                 <button class="btn" onclick="sel(3)">Group 3</button>
                 <button class="btn" onclick="sel(4)">Group 4</button>
             </div>
-            <button id="sub" onclick="cast()" style="display:none; width:100%; padding:15px; background:#4CAF50; color:white; border:none; border-radius:8px">Submit Vote</button>
+            <button id="sub" onclick="cast()">Submit My Votes</button>
         </div>
     </div>
     <div id="toast"></div>
@@ -47,10 +50,8 @@
         let name = "";
 
         function showToast(msg) {
-            const x = document.getElementById("toast");
-            x.innerText = msg;
-            x.className = "show";
-            setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
+            const x = document.getElementById("toast"); x.innerText = msg; x.className = "show";
+            setTimeout(() => { x.className = ""; }, 3000);
         }
 
         window.checkName = async () => {
@@ -59,11 +60,9 @@
             const allowed = snap.val() || [];
             const votedSnap = await get(ref(db, 'voted/' + name.replace(/\./g, '_')));
 
-            if (!allowed.includes(name)) {
-                showToast("Name not found on roster!");
-            } else if (votedSnap.exists()) {
-                showToast("You have already voted!");
-            } else {
+            if (!allowed.includes(name)) { showToast("Student info not recognized!"); }
+            else if (votedSnap.exists()) { showToast("You have already voted!"); }
+            else { 
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('voteSection').style.display = 'block';
             }
@@ -78,13 +77,13 @@
                 selected.push(n);
                 btns[n-1].classList.add('selected');
             }
-            document.getElementById('sub').style.display = selected.length === 2 ? 'block' : 'none';
+            document.getElementById('sub').style.display = (selected.length === 2) ? 'block' : 'none';
         };
 
         window.cast = async () => {
             await push(ref(db, 'votes'), { name: name, choices: selected });
             await set(ref(db, 'voted/' + name.replace(/\./g, '_')), true);
-            showToast("Success! Vote recorded.");
+            showToast("Success! Redirecting...");
             setTimeout(() => location.reload(), 2000);
         };
     </script>
